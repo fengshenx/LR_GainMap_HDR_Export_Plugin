@@ -97,7 +97,10 @@ exportServiceProvider.processRenderedPhotos = function(functionContext, exportCo
         local success, pathOrMessage = rendition:waitForRender()
         if success then
             local heicPath = LrPathUtils.replaceExtension(pathOrMessage, "heic")
-            local command = string.format("sips -s format heic -s formatOptions %d %s --out %s", imageQuality, pathOrMessage, heicPath)
+            local pluginPath = LrPathUtils.child(_PLUGIN.path, "ghdr")
+
+            local command = string.format("%s -q %f -i %s %s", pluginPath, imageQuality/100, pathOrMessage, heicPath)
+            -- local command = string.format("magick %s -sampling-factor 4:2:2 -quality %d %s", pathOrMessage,imageQuality, heicPath)
 
             local result = LrTasks.execute(command)
             if result ~= 0 then
