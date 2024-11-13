@@ -11,42 +11,10 @@ local exportServiceProvider = {}
 
 exportServiceProvider.exportPresetFields = {
     { key = 'imageQuality', default = 70 },
+    { key = 'conversionTool', default = 'ghdr' }, -- Added conversion tool option
 }
 
-exportServiceProvider.startDialog = function(propertyTable)
-    local f = LrView.osFactory()
-    local bind = LrView.bind
-    local share = LrView.share
 
-    -- Ensure imageQuality is an integer
-    propertyTable:addObserver('imageQuality', function()
-        propertyTable.imageQuality = math.floor(propertyTable.imageQuality + 0.5)
-    end)
-
-    local contents = f:column {
-        bind_to_object = propertyTable,
-        f:row {
-            f:static_text {
-                title = "Image Quality:",
-                alignment = 'right',
-                width = share 'label_width',
-            },
-            f:slider {
-                value = bind 'imageQuality',
-                min = 0,
-                max = 100,
-                width_in_chars = 20,
-                fill_horizontal = 1,
-            },
-            f:edit_field {
-                value = bind 'imageQuality',
-                width_in_chars = 3,
-            },
-        },
-    }
-
-    return contents
-end
 
 exportServiceProvider.sectionsForTopOfDialog = function(viewFactory, propertyTable)
     local f = viewFactory
@@ -77,6 +45,20 @@ exportServiceProvider.sectionsForTopOfDialog = function(viewFactory, propertyTab
                     width_in_chars = 3,
                 },
             },
+            f:row {
+                f:static_text {
+                    title = "Conversion Tool:",
+                    alignment = 'right',
+                    width = LrView.share 'label_width',
+                },
+                f:popup_menu {
+                    items = {
+                        { title = 'Default', value = 'ghdr' },
+                        { title = 'MacOS SIPS', value = 'sips' },
+                    },
+                    value = LrView.bind 'conversionTool',
+                },
+            },
         },
     }
 end
@@ -90,6 +72,7 @@ exportServiceProvider.processRenderedPhotos = function(functionContext, exportCo
     })
 
     local imageQuality = exportContext.propertyTable.imageQuality or 70
+    local conversionTool = exportContext.propertyTable.conversionTool or 'ghdr'
 
     for i, rendition in exportSession:renditions() do
         progressScope:setPortionComplete(i-1, nPhotos)
@@ -97,10 +80,14 @@ exportServiceProvider.processRenderedPhotos = function(functionContext, exportCo
         local success, pathOrMessage = rendition:waitForRender()
         if success then
             local heicPath = LrPathUtils.replaceExtension(pathOrMessage, "heic")
-            local pluginPath = LrPathUtils.child(_PLUGIN.path, "ghdr")
 
-            local command = string.format("%s -q %f -i %s %s", pluginPath, imageQuality/100, pathOrMessage, heicPath)
-            -- local command = string.format("sips -s format heic -s formatOptions high -o %s %s", heicPath, pathOrMessage)
+            local command
+            if conversionTool == 'ghdr' then
+                local pluginPath = LrPathUtils.child(_PLUGIN.path, "ghdr")
+                command = string.format("%s -q %f -i %s %s", pluginPath, imageQuality/100, pathOrMessage, heicPath)
+            elseif conversionTool == 'sips' then
+                command = string.format("sips -s format heic -s formatOptions high -o %s %s", heicPath, pathOrMessage)
+            end
 
             local result = LrTasks.execute(command)
             if result ~= 0 then
@@ -114,7 +101,6 @@ exportServiceProvider.processRenderedPhotos = function(functionContext, exportCo
 
         progressScope:setPortionComplete(i, nPhotos)
         if progressScope:isCanceled() then break end
-
     end
     progressScope:done()
 end
