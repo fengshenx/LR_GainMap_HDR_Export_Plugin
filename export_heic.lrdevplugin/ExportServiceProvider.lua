@@ -100,7 +100,7 @@ exportServiceProvider.processRenderedPhotos = function(functionContext, exportCo
             local pluginPath = LrPathUtils.child(_PLUGIN.path, "ghdr")
 
             local command = string.format("%s -q %f -i %s %s", pluginPath, imageQuality/100, pathOrMessage, heicPath)
-            -- local command = string.format("magick %s -sampling-factor 4:2:2 -quality %d %s", pathOrMessage,imageQuality, heicPath)
+            -- local command = string.format("sips -s format heic -s formatOptions high -o %s %s", heicPath, pathOrMessage)
 
             local result = LrTasks.execute(command)
             if result ~= 0 then
