@@ -3,7 +3,7 @@ This is a Lightroom plugin that can change the output file to Heic format.
 
 Although Lightroom currently supports Heic display, it does not support output in Heic format. This plug-in will solve this problem.
 
-Note: Currently only Lightroom Classic and MacOS are supported.
+Note: Currently only Lightroom Classic and MacOS Sequoia are supported.
 
 # Add to LR
 * Open the Lightroom Classic Plugin Manager.
