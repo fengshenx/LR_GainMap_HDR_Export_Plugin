@@ -17,5 +17,8 @@ Note: Currently only Lightroom Classic and MacOS Sequoia are supported.
 * Select HDR output, Color Space HDR P3. Don't select maximize compatibility
 * Start export
 
-Because this plug-in first exports to an intermediate format and then converts it to HEIC, it is recommended that the intermediate format be selected as TIFF to ensure the best image quality.
+# Build
+* Install Xcode development tools and make
+
+Because this plug-in first exports to an TIFF format and then converts it to HEIC, Make sure to select TIFF as the export format.
 
