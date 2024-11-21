@@ -9,160 +9,187 @@
 //
 
 import CoreImage
-import ImageIO
-import CoreGraphics
 import Foundation
-import CoreImage.CIFilterBuiltins
-import UniformTypeIdentifiers
 
 let ctx = CIContext()
 
-func subtractBlendMode(inputImage: CIImage, backgroundImage: CIImage) -> CIImage {
-    let colorBlendFilter = CIFilter.subtractBlendMode()
-    colorBlendFilter.inputImage = inputImage
-    colorBlendFilter.backgroundImage = backgroundImage
-    return colorBlendFilter.outputImage!
-}
+let allArgs = Array(CommandLine.arguments.dropFirst())
+let imageoptions = Array(allArgs.dropLast())
+let outputFile = allArgs.last
 
-func linearTosRGB(inputImage: CIImage) -> CIImage {
-    let linearTosRGB = CIFilter.linearToSRGBToneCurve()
-    linearTosRGB.inputImage = inputImage
-    return linearTosRGB.outputImage!
-}
+var imagequality: Double? = 0.85
+var sdr_export: Bool = false
+var pq_export: Bool = false
+var hlg_export: Bool = false
+var bit_depth = CIFormat.RGBA8
+var url_hdr: URL? = nil
+var url_export_heic: URL? = nil
 
-func exposureAdjust(inputImage: CIImage, inputEV: Float) -> CIImage {
-    let exposureAdjustFilter = CIFilter.exposureAdjust()
-    exposureAdjustFilter.inputImage = inputImage
-    exposureAdjustFilter.ev = inputEV
-    return exposureAdjustFilter.outputImage!
-}
-
-func maximumComponent(inputImage: CIImage) -> CIImage {
-    let maximumComponentFilter = CIFilter.maximumComponent()
-    maximumComponentFilter.inputImage = inputImage
-    return maximumComponentFilter.outputImage!
-}
-
-func toneCurve1(inputImage: CIImage) -> CIImage {
-    let toneCurveFilter = CIFilter.toneCurve()
-    toneCurveFilter.inputImage = inputImage
-    toneCurveFilter.point0 = CGPoint(x: 0.1, y: 0.0)
-    toneCurveFilter.point1 = CGPoint(x: 0.55, y: 0.5)
-    toneCurveFilter.point2 = CGPoint(x: 1, y: 1)
-    return toneCurveFilter.outputImage!
-}
-
-func toneCurve2(inputImage: CIImage) -> CIImage {
-    let toneCurveFilter = CIFilter.toneCurve()
-    toneCurveFilter.inputImage = inputImage
-    toneCurveFilter.point0 = CGPoint(x: 0, y: 0.75)
-    toneCurveFilter.point1 = CGPoint(x: 0.6, y: 0.77)
-    toneCurveFilter.point2 = CGPoint(x: 0.95, y: 0.95)
-    toneCurveFilter.point3 = CGPoint(x: 0.99, y: 0.99)
-    return toneCurveFilter.outputImage!
-}
-
-func hdrtosdr(inputImage: CIImage) -> CIImage {
-    let imagedata = ctx.tiffRepresentation(of: inputImage,
-                                           format: CIFormat.RGBA8,
-                                           colorSpace: CGColorSpace(name: CGColorSpace.displayP3)!
-    )
-    let sdrimage = CIImage(data: imagedata!)
-    return sdrimage!
-}
-
-// 解析命令行参数
-func parseArguments() -> (source: String, destination: String, quality: Float) {
-    var quality: Float = 0.8 // 默认质量
-    var sourcePath: String?
-    let args = Array(CommandLine.arguments.dropFirst()) // 改为 let 常量
-    
-    var i = 0
-    while i < args.count {
-        switch args[i] {
-        case "-q":
-            if i + 1 < args.count, 
-               let qValue = Float(args[i + 1]), 
-               qValue >= 0.0, qValue <= 1.0 {
-                quality = qValue
-                i += 2
-            } else {
-                print("Invalid quality value. Must be between 0.0 and 1.0")
-                exit(1)
-            }
-        case "-i":
-            if i + 1 < args.count {
-                sourcePath = args[i + 1]
-                i += 2
-            } else {
-                print("Missing input file path after -i")
-                exit(1)
-            }
-        default:
-            i += 1
+var index:Int = 0
+while index < imageoptions.count {
+    let option = imageoptions[index]
+    switch option {
+    case "-q":
+        guard index + 1 < imageoptions.count else {
+            print("Error: The -q option requires a valid numeric value.")
+            exit(1)
         }
+        if let value = Double(imageoptions[index + 1]) {
+            if value > 1 {
+                imagequality = value/100
+            } else {
+                imagequality = value
+            }
+            index += 1
+        } else {
+            print("Error: The -q option requires a valid numeric value.")
+            exit(1)
+        }
+    case "-i":
+        guard index + 1 < imageoptions.count else {
+            print("Error: The -i option requires an input file.")
+            exit(1)
+        }
+        let input_path = imageoptions[index + 1]
+        url_hdr = URL(fileURLWithPath: input_path)
+        index += 1
+    case "-s":
+        if pq_export || hlg_export{
+            print("Error: Only one type of export can be specified.")
+            exit(1)
+        }
+        sdr_export = true
+    case "-p":
+        if sdr_export || hlg_export {
+            print("Error: Only one type of export can be specified.")
+            exit(1)
+        }
+        pq_export = true
+    case "-h":
+        if sdr_export || pq_export{
+            print("Error: Only one type of export can be specified.")
+            exit(1)
+        }
+        hlg_export = true
+    case "-d":
+        guard index + 1 < imageoptions.count else {
+            print("Error: The -d option requires a argument.")
+            exit(1)
+        }
+        let bit_depth_argument = String(imageoptions[index + 1])
+        if bit_depth_argument == "8"{
+            index += 1
+        } else { if bit_depth_argument == "10"{
+            bit_depth = CIFormat.RGB10
+            index += 1
+        } else {
+            print("Error: Bit depth must be either 8 or 10.")
+            exit (1)
+        }}
+    case "-c":
+        guard index + 1 < imageoptions.count else {
+            print("Error: The -c option requires color space argument.")
+            exit(1)
+        }
+        let color_space_argument = String(imageoptions[index + 1])
+        let color_space_option = color_space_argument.lowercased()
+        switch color_space_option {
+            case "srgb","709","rec709","rec.709","bt709","bt,709","itu709":
+                sdr_color_space = CGColorSpace.itur_709
+                hdr_color_space = CGColorSpace.itur_709_PQ
+                hlg_color_space = CGColorSpace.itur_709_HLG
+            case "p3","dcip3","dci-p3","dci.p3","displayp3":
+                sdr_color_space = CGColorSpace.displayP3
+                hdr_color_space = CGColorSpace.displayP3_PQ
+                hlg_color_space = CGColorSpace.displayP3_HLG
+            case "rec2020","2020","rec.2020","bt2020","itu2020","2100","rec2100","rec.2100":
+                sdr_color_space = CGColorSpace.itur_2020_sRGBGamma
+                hdr_color_space = CGColorSpace.itur_2100_PQ
+                hlg_color_space = CGColorSpace.itur_2100_HLG
+            default:
+                print("Error: The -c option requires color space argument. (srgb, p3, rec2020)")
+                exit(1)
+        }
+        index += 1
+    default:
+        print("Warning: Unknown option: \(option)")
     }
-    
-    // 检查必需参数
-    guard let source = sourcePath, args.last != "-i", args.last != "-q" else {
-        print("Usage: program -i <source file> [-q quality] <destination>")
-        print("  -i: input HDR image file")
-        print("  -q: HEIF compression quality (0.0-1.0, default: 0.8)")
-        exit(1)
-    }
-    
-    // 最后一个参数作为目标路径
-    let destination = args.last!
-    
-    return (source, destination, quality)
+    index += 1
 }
 
-let (sourcePath, destinationPath, quality) = parseArguments()
-let url_hdr = URL(fileURLWithPath: sourcePath)
-let path_export = URL(fileURLWithPath: destinationPath)
+// 设置输出文件路径
+if let outputFile = outputFile {
+    url_export_heic = URL(fileURLWithPath: outputFile)
+}
 
-let hdrimage = CIImage(contentsOf: url_hdr,options: [.expandToHDR: true])
-let tonemapping_sdrimage = hdrimage?.applyingFilter("CIToneMapHeadroom", parameters: ["inputTargetHeadroom":1.0])
-
-let sdrimage = hdrtosdr(inputImage:hdrimage!)
-let gainmap = toneCurve2(
-    inputImage:toneCurve1(
-        inputImage:maximumComponent(
-            inputImage:exposureAdjust(
-                inputImage:linearTosRGB(
-                    inputImage:subtractBlendMode(
-                        inputImage:exposureAdjust(inputImage:sdrimage,inputEV: -3.5),backgroundImage: exposureAdjust(inputImage:hdrimage!,inputEV: -3.5)
-                    )
-                ), inputEV: 0.5
-            )
-        )
-    )
-)
-
-// codes below from: https://gist.github.com/kiding/fa4876ab4ddc797e3f18c71b3c2eeb3a?permalink_comment_id=4289828#gistcomment-4289828
-
-// Get metadata, and especially the {MakerApple} tags from the main image.
-var imageProperties = tonemapping_sdrimage!.properties
-var makerApple = imageProperties[kCGImagePropertyMakerAppleDictionary as String] as? [String: Any] ?? [:]
-
-// Set HDR-related tags as desired.
-makerApple["33"] = 4.0 // 0x21, seems to describe the global HDR headroom. Can be 0.0 or un-set when setting the tag below.
-makerApple["48"] = 0.0 // 0x30, seems to describe the effect of the gain map to the HDR effect, between 0.0 and 8.0 with 0.0 being the max.
-
-// Set metadata back on image before export.
-imageProperties[kCGImagePropertyMakerAppleDictionary as String] = makerApple
-let modifiedImage = tonemapping_sdrimage!.settingProperties(imageProperties)
-
-do {
-    try ctx.writeHEIFRepresentation(of: modifiedImage,
-                                    to: path_export,
-                                    format: CIFormat.RGBA8,
-                                    colorSpace: (sdrimage.colorSpace)!,
-                                    options: [
-                                        .hdrGainMapImage: gainmap,
-                                        CIImageRepresentationOption(rawValue: kCGImageDestinationLossyCompressionQuality as String): quality
-                                    ])
-} catch {
-    print("Error saving image: \(error.localizedDescription)")
+// 检查是否提供了输入文件
+guard let url_hdr = url_hdr, let url_export_heic = url_export_heic else {
+    print("Error: Input file must be specified with -i option")
     exit(1)
 }
+
+let hdr_image = CIImage(contentsOf: url_hdr, options: [.expandToHDR: true])
+let tonemapped_sdrimage = hdr_image?.applyingFilter("CIToneMapHeadroom", parameters: ["inputTargetHeadroom":1.0])
+let export_options = NSDictionary(dictionary:[kCGImageDestinationLossyCompressionQuality:imagequality ?? 0.85, CIImageRepresentationOption.hdrImage:hdr_image!])
+
+var sdr_color_space = CGColorSpace.displayP3
+var hdr_color_space = CGColorSpace.displayP3_PQ
+var hlg_color_space = CGColorSpace.displayP3_HLG
+
+let image_color_space = hdr_image?.colorSpace?.name
+if (image_color_space! as NSString).contains("709") {
+    sdr_color_space = CGColorSpace.itur_709
+    hdr_color_space = CGColorSpace.itur_709_PQ
+    hlg_color_space = CGColorSpace.itur_709_HLG
+}
+if (image_color_space! as NSString).contains("sRGB") {
+    sdr_color_space = CGColorSpace.itur_709
+    hdr_color_space = CGColorSpace.itur_709_PQ
+    hlg_color_space = CGColorSpace.itur_709_HLG
+}
+if (image_color_space! as NSString).contains("2100") {
+    sdr_color_space = CGColorSpace.itur_2020_sRGBGamma
+    hdr_color_space = CGColorSpace.itur_2100_PQ
+    hlg_color_space = CGColorSpace.itur_2100_HLG
+}
+if (image_color_space! as NSString).contains("2020") {
+    sdr_color_space = CGColorSpace.itur_2020_sRGBGamma
+    hdr_color_space = CGColorSpace.itur_2100_PQ
+    hlg_color_space = CGColorSpace.itur_2100_HLG
+}
+
+while sdr_export{
+    let sdr_export_options = NSDictionary(dictionary:[kCGImageDestinationLossyCompressionQuality:imagequality ?? 0.85])
+    try! ctx.writeHEIFRepresentation(of: tonemapped_sdrimage!,
+                                     to: url_export_heic,
+                                     format: bit_depth,
+                                     colorSpace: CGColorSpace(name: sdr_color_space)!,
+                                     options:sdr_export_options as! [CIImageRepresentationOption : Any])
+    exit(0)
+}
+
+while hlg_export{
+    let hlg_export_options = NSDictionary(dictionary:[kCGImageDestinationLossyCompressionQuality:imagequality ?? 0.85])
+    try! ctx.writeHEIFRepresentation(of: hdr_image!,
+                                     to: url_export_heic,
+                                     format: bit_depth,
+                                     colorSpace: CGColorSpace(name: hlg_color_space)!,
+                                     options:hlg_export_options as! [CIImageRepresentationOption : Any])
+    exit(0)
+}
+
+while pq_export {
+    let pq_export_options = NSDictionary(dictionary:[kCGImageDestinationLossyCompressionQuality:imagequality ?? 0.85])
+    try! ctx.writeHEIF10Representation(of: hdr_image!,
+                                       to: url_export_heic,
+                                       colorSpace: CGColorSpace(name: hdr_color_space)!,
+                                       options:pq_export_options as! [CIImageRepresentationOption : Any])
+    exit(0)
+}
+
+try! ctx.writeHEIFRepresentation(of: tonemapped_sdrimage!,
+                                 to: url_export_heic,
+                                 format: bit_depth,
+                                 colorSpace: CGColorSpace(name: sdr_color_space)!,
+                                 options: export_options as! [CIImageRepresentationOption : Any])
+exit(0)
