@@ -46,19 +46,19 @@ LRC 14.0开始支持HDR导出了，但是导出格式不支持Gainmap，在Andro
 
 Gainmap算法来自：[PQ_HDR_to_Gain_Map_HDR](https://github.com/chemharuka/PQ_HDR_to_Gain_Map_HDR)
 
-# LRC中添加插件
+## LRC中添加插件
 * 打开LRC的增效工具管理器
 * 点击 **添加**
 * 选择这个插件
 
-# 使用方法
+## 使用方法
 * 选择照片，并打开导出窗口
 * 在顶部选择 "Export to HEIC"
 * 选择导出格式为**TIFF**。
 * 选择HDR输出。同时**不要选择最大兼容性**。
 * 开始导出
 
-# 编译
+## 编译
 * 安装Xcode开发环境，在目录下执行`make`
 
 因为导出使用TIFF格式为中间格式，请务必选择导出为**TIFF**格式。 
