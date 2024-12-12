@@ -84,9 +84,9 @@ exportServiceProvider.processRenderedPhotos = function(functionContext, exportCo
             local command
             if conversionTool == 'ghdr' then
                 local pluginPath = LrPathUtils.child(_PLUGIN.path, "ghdr")
-                command = string.format("%s -q %f -i %s %s", pluginPath, imageQuality/100, pathOrMessage, heicPath)
+                command = string.format("%s -i %s -q %f  %s", pluginPath, imageQuality/100, pathOrMessage, heicPath)
             elseif conversionTool == 'sips' then
-                command = string.format("sips -s format heic -s formatOptions high -o %s %s", heicPath, pathOrMessage)
+                command = string.format("sips -s format heic -s formatOptions %s -o %s %s", imageQuality, heicPath, pathOrMessage)
             end
 
             local result = LrTasks.execute(command)
