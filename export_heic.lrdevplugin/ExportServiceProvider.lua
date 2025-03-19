@@ -84,15 +84,21 @@ exportServiceProvider.processRenderedPhotos = function(functionContext, exportCo
             local command
             if conversionTool == 'ghdr' then
                 local pluginPath = LrPathUtils.child(_PLUGIN.path, "ghdr")
-                command = string.format("%s -i %s -q %f  %s", pluginPath, imageQuality/100, pathOrMessage, heicPath)
+                local destFolder = LrPathUtils.parent(heicPath)
+                command = string.format('"%s" "%s" "%s" -q %.2f', pluginPath, pathOrMessage, destFolder, imageQuality/100)
             elseif conversionTool == 'sips' then
-                command = string.format("sips -s format heic -s formatOptions %s -o %s %s", imageQuality, heicPath, pathOrMessage)
+                command = string.format('sips -s format heic -s formatOptions %s -o "%s" "%s"', imageQuality, heicPath, pathOrMessage)
             end
 
-            local result = LrTasks.execute(command)
+            -- Display the command in debug dialog
+            -- LrDialogs.message("Command to execute", command)
+            
+            local result, output = LrTasks.execute(command, {captureStdout = true})
             if result ~= 0 then
-                LrDialogs.showError("Failed to convert to HEIC.")
+                LrDialogs.showError("Failed to convert to HEIC. Error: " .. (output or "Unknown error"))
             else
+                -- Display successful output for debugging
+                -- LrDialogs.message("Command Successful", "Output: " .. (output or "No output"))
                 LrFileUtils.delete(pathOrMessage)
             end
         else
