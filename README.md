@@ -1,10 +1,10 @@
-# Gainmap HDR HEIC Export Plugin for Lightroom Classic
+# Gainmap HDR HEIF Export Plugin for Lightroom Classic
 
-This plugin enables exporting in the Gainmap HDR HEIC format from Lightroom Classic.
+This plugin enables exporting in the Gainmap HDR HEIF format from Lightroom Classic.
 
 Starting with LRC 14.0, HDR export is supported, but it doesn’t include Gainmap support, which causes compatibility issues on Android devices. This plugin resolves that problem.
 
-**Note**: Currently supports Lightroom Classic 14.0 and macOS Sequoia only.
+**Note**: Currently supports Lightroom Classic 14.0 and macOS 15.0 only.
 
 Gainmap code is from [PQ_HDR_to_Gain_Map_HDR](https://github.com/chemharuka/PQ_HDR_to_Gain_Map_HDR)
 
@@ -37,12 +37,12 @@ Since the export process uses TIFF as an intermediary format, ensure you select 
 
 -------------
 
-# Gainmap HDR Heic Lightroom Classic导出插件
-这是一个支持Gainmap HDR Heic格式导出的Lightroom Classic插件。
+# Gainmap HDR Heif Lightroom Classic导出插件
+这是一个支持Gainmap HDR Heif格式导出的Lightroom Classic插件。
 
 LRC 14.0开始支持HDR导出了，但是导出格式不支持Gainmap，在Android手机上有兼容问题。这个插件可以解决这个问题。
 
-注意：当前仅支持Lightroom Classic 14.0 和 MacOS Sequoia
+注意：当前仅支持Lightroom Classic 14.0 和 MacOS 15.0
 
 Gainmap算法来自：[PQ_HDR_to_Gain_Map_HDR](https://github.com/chemharuka/PQ_HDR_to_Gain_Map_HDR)
 
