@@ -9,6 +9,11 @@ Starting with LRC 14.0, HDR export is supported, but it doesn’t include Gainma
 Gainmap code is from [PQ_HDR_to_Gain_Map_HDR](https://github.com/chemharuka/PQ_HDR_to_Gain_Map_HDR)
 
 ---
+## Download the LRC plugin
+
+1. Download the plugin. [Release](https://github.com/fengshenx/LR_GainMap_HDR_Export_Plugin/releases/tag/v1.0)
+2. Unzip the file.
+
 
 ## Adding the Plugin to LRC
 
@@ -46,6 +51,11 @@ LRC 14.0开始支持HDR导出了，但是导出格式不支持Gainmap，在Andro
 
 Gainmap算法来自：[PQ_HDR_to_Gain_Map_HDR](https://github.com/chemharuka/PQ_HDR_to_Gain_Map_HDR)
 
+## 下载插件
+
+1. 下载插件。 [点我下载](https://github.com/fengshenx/LR_GainMap_HDR_Export_Plugin/releases/tag/v1.0)
+2. 解压文件。
+  
 ## LRC中添加插件
 * 打开LRC的增效工具管理器
 * 点击 **添加**
