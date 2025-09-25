@@ -12,32 +12,19 @@ class GainMapFilter: CIFilter {
     var SDRImage: CIImage?
     var hdrmax: Float?
     static var kernel: CIKernel = { () -> CIColorKernel in
-        // Find the executable path
-        let executableURL = URL(fileURLWithPath: CommandLine.arguments[0])
-        let executableDir = executableURL.deletingLastPathComponent()
-        
-        // Look for the metallib file in the same directory as the executable
-        let metalLibURL = executableDir.appendingPathComponent("GainMapKernel.ci.metallib")
-        
-        print("Looking for metallib at: \(metalLibURL.path)")
-        
-        guard FileManager.default.fileExists(atPath: metalLibURL.path) else {
-            fatalError("Metallib file does not exist at path: \(metalLibURL.path)")
-        }
-        
-        do {
-            let data = try Data(contentsOf: metalLibURL)
-            do {
-                let kernel = try CIColorKernel(
-                    functionName: "GainMapFilter",
-                    fromMetalLibraryData: data)
-                return kernel
-            } catch {
-                fatalError("Failed to create color kernel: \(error)")
+        guard let url = Bundle.main.url(
+              forResource: "GainMapKernel.ci",
+              withExtension: "metallib"),
+              let data = try? Data(contentsOf: url) else {
+              fatalError("Unable to load metallib")
             }
-        } catch {
-            fatalError("Failed to load metallib data: \(error)")
-        }
+        
+        guard let kernel = try? CIColorKernel(
+              functionName: "GainMapFilter",
+              fromMetalLibraryData: data) else {
+              fatalError("Unable to create color kernel")
+            }
+        return kernel
     }()
     override var outputImage: CIImage? {
         guard let HDRImage = HDRImage else { return nil }
