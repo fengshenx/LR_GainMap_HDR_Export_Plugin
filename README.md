@@ -11,8 +11,9 @@ Gainmap code is from [PQ_HDR_to_Gain_Map_HDR](https://github.com/chemharuka/PQ_H
 ---
 ## Download the LRC plugin
 
-1. Download the plugin. [Release](https://github.com/fengshenx/LR_GainMap_HDR_Export_Plugin/releases/tag/v1.0)
-2. Unzip the file.
+1. Download the plugin. [Release](https://github.com/fengshenx/LR_GainMap_HDR_Export_Plugin/releases/tag/v1.1)
+2. Open the DMG file.
+3. Drag the export_heic.lrdevplugin to your disk.
 
 
 ## Adding the Plugin to LRC

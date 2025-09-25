@@ -1,1 +1,4 @@
 .DS_Store
+build
+dmg_root
+export_heic.lrdevplugin.dmg
